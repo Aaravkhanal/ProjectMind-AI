@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry install --no-interaction --no-root
+
+      - name: Check Python syntax (all source files)
+        run: |
+          python -c "
+          import ast, pathlib, sys
+          errors = []
+          for f in pathlib.Path('.').rglob('*.py'):
+              if any(p in f.parts for p in ['.venv','node_modules','.git','dist']):
+                  continue
+              try:
+                  ast.parse(f.read_text())
+              except SyntaxError as e:
+                  errors.append(f'{f}:{e}')
+          if errors:
+              [print('SYNTAX:', e) for e in errors]
+              sys.exit(1)
+          print(f'✓ {sum(1 for _ in pathlib.Path(\".\").rglob(\"*.py\"))} files parsed cleanly')
+          "
+
+      - name: Run tests
+        run: pytest tests/ -x --tb=short
+
+  typecheck-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install extension dependencies
+        run: cd vscode-extension && npm ci
+      - name: TypeScript compile check
+        run: cd vscode-extension && npm run compile
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci
+      - name: Build frontend
+        run: cd frontend && npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000

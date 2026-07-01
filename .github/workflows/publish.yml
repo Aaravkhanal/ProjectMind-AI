@@ -1,0 +1,120 @@
+name: Publish
+
+# Trigger: push a tag like v1.2.3 → publishes CLI to PyPI + extension to Marketplace
+# Manual trigger available for individual publish steps
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "What to publish"
+        required: true
+        type: choice
+        options:
+          - cli-only
+          - extension-only
+          - all
+
+jobs:
+  # ── 1. Tests must pass first ────────────────────────────────────────────
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry install --no-interaction --no-root
+      - name: Run tests
+        run: pytest tests/ -x --tb=short
+
+  # ── 2. Publish CLI to PyPI ───────────────────────────────────────────────
+  publish-cli:
+    needs: test
+    runs-on: ubuntu-latest
+    if: >
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'workflow_dispatch' &&
+       contains(fromJson('["cli-only","all"]'), github.event.inputs.target))
+    environment: pypi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Build package
+        run: poetry build
+      - name: Publish to PyPI
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        run: poetry publish
+
+  # ── 3. Publish VS Code Extension ─────────────────────────────────────────
+  publish-extension:
+    needs: test
+    runs-on: ubuntu-latest
+    if: >
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'workflow_dispatch' &&
+       contains(fromJson('["extension-only","all"]'), github.event.inputs.target))
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install extension dependencies
+        run: cd vscode-extension && npm ci
+      - name: Compile TypeScript
+        run: cd vscode-extension && npm run compile
+      - name: Publish to VS Code Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          cd vscode-extension
+          npx @vscode/vsce publish --pat "$VSCE_PAT"
+
+  # ── 4. Create GitHub Release ──────────────────────────────────────────────
+  github-release:
+    needs: [publish-cli, publish-extension]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build extension VSIX for release asset
+        run: |
+          cd vscode-extension
+          npm ci
+          npm run compile
+          npx @vscode/vsce package --allow-missing-repository
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: vscode-extension/*.vsix
+          body: |
+            ## Install
+
+            **CLI:**
+            ```bash
+            pip install projectmind
+            ```
+
+            **VS Code Extension:** Search "ProjectMind AI" in the Extensions panel, or install the `.vsix` attached below.
+
+            **GitHub Action:**
+            ```yaml
+            - uses: Aaravkhanal/llm-reviewer/.github/actions/projectmind-health-gate@${{ github.ref_name }}
+              with:
+                github_token: ${{ secrets.GITHUB_TOKEN }}
+            ```

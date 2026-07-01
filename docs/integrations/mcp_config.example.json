@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "projectmind": {
+      "command": "projectmind-mcp",
+      "args": [],
+      "cwd": "/absolute/path/to/your/project"
+    }
+  }
+}

@@ -1,0 +1,197 @@
+{
+  "name": "projectmind",
+  "displayName": "ProjectMind AI",
+  "description": "BYOK Multi-Agent AI Engineering Platform — auto-discovers your AI environment, learns from your codebase, and brings multi-agent code review into VS Code.",
+  "version": "0.3.1",
+  "publisher": "aaravkhanal",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other", "Programming Languages", "Linters"],
+  "keywords": ["ai", "code quality", "health score", "architecture", "memory", "llm", "review"],
+  "icon": "media/icon.png",
+  "activationEvents": [
+    "workspaceContains:.projectmind",
+    "onView:projectmind.brainView",
+    "onView:projectmind.gitIntelView",
+    "onView:projectmind.costView",
+    "onView:projectmind.plansView"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "projectmind-sidebar",
+          "title": "ProjectMind AI",
+          "icon": "media/icon.png"
+        }
+      ]
+    },
+    "views": {
+      "projectmind-sidebar": [
+        {
+          "id": "projectmind.brainView",
+          "name": "Repository Brain",
+          "icon": "$(book)"
+        },
+        {
+          "id": "projectmind.gitIntelView",
+          "name": "Git Intelligence",
+          "icon": "$(git-branch)"
+        },
+        {
+          "id": "projectmind.costView",
+          "name": "Cost & Budget",
+          "icon": "$(credit-card)"
+        },
+        {
+          "id": "projectmind.plansView",
+          "name": "Execution Plans",
+          "icon": "$(list-ordered)"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "projectmind.showImpact",
+        "title": "ProjectMind: Show File Impact",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "projectmind.refresh",
+        "title": "ProjectMind: Refresh All Views",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "projectmind.openDashboard",
+        "title": "ProjectMind: Open Dashboard",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "projectmind.trace",
+        "title": "ProjectMind: Trace Root Cause",
+        "icon": "$(search)"
+      },
+      {
+        "command": "projectmind.onboard",
+        "title": "ProjectMind: Generate Onboarding Guide"
+      },
+      {
+        "command": "projectmind.reviewDiff",
+        "title": "ProjectMind: Run Multi-Agent Review",
+        "icon": "$(play)"
+      },
+      {
+        "command": "projectmind.generatePrompt",
+        "title": "ProjectMind: Generate Agent Prompt",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "projectmind.scorePrRisk",
+        "title": "ProjectMind: Score PR Risk",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "projectmind.approvePlan",
+        "title": "ProjectMind: Approve Plan",
+        "icon": "$(check)"
+      },
+      {
+        "command": "projectmind.setBudget",
+        "title": "ProjectMind: Set Monthly Budget",
+        "icon": "$(credit-card)"
+      },
+      {
+        "command": "projectmind.discoverEnvironment",
+        "title": "ProjectMind: Discover AI Environment",
+        "icon": "$(search)"
+      },
+      {
+        "command": "projectmind.importProviders",
+        "title": "ProjectMind: Import Detected Providers",
+        "icon": "$(cloud-download)"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "projectmind.showImpact",
+          "group": "projectmind@1",
+          "when": "explorerResourceIsFile"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "projectmind.showImpact",
+          "group": "projectmind@1"
+        },
+        {
+          "command": "projectmind.generatePrompt",
+          "group": "projectmind@2"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "projectmind.refresh",
+          "when": "view =~ /projectmind\\./",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ProjectMind",
+      "properties": {
+        "projectmind.backendUrl": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "URL of the ProjectMind backend API server (run: projectmind serve)"
+        },
+        "projectmind.dashboardUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "URL of the ProjectMind web dashboard (run: cd frontend && npm run dev)"
+        },
+        "projectmind.refreshIntervalSeconds": {
+          "type": "number",
+          "default": 30,
+          "description": "How often to refresh the health score and sidebar views (seconds)"
+        },
+        "projectmind.showComplexityDecorations": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show inline warnings on high-complexity functions"
+        },
+        "projectmind.complexityThreshold": {
+          "type": "number",
+          "default": 10,
+          "description": "Cyclomatic complexity threshold for inline warnings"
+        },
+        "projectmind.llmProvider": {
+          "type": "string",
+          "default": "nvidia",
+          "enum": ["nvidia", "openai", "anthropic", "ollama"],
+          "description": "LLM provider to use for agent reviews"
+        },
+        "projectmind.reviewBudgetUsd": {
+          "type": "number",
+          "default": 1.0,
+          "description": "Per-review budget cap in USD"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  }
+}

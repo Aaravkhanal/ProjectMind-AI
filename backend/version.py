@@ -1,0 +1,5 @@
+__version__ = "0.2.0"
+__title__ = "ProjectMind AI"
+__description__ = "The persistent memory layer for AI coding agents"
+__author__ = "Aarav Khanal"
+__license__ = "MIT"

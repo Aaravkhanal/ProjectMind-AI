@@ -1,0 +1,35 @@
+You are working on **ProjectMind AI** — a production-grade BYOK Multi-Agent AI Engineering Platform.
+
+**Author:** Aarav Khanal
+
+**Stack:** Python 3.13, FastAPI, LangChain, LangGraph, LiteLLM, SQLModel, SQLite, ChromaDB
+
+**Architecture:** Layered API with multi-agent orchestration
+- `backend/api/` — FastAPI routes (93 endpoints, 21 routers)
+- `backend/agents/` — LangGraph multi-agent graphs + specialized agents
+- `backend/core/` — Brain, Cost, Discovery, Git Intel, Providers, Observability
+- `backend/llm/` — LiteLLM universal gateway + intelligent model router
+- `plugins/` — Per-IDE discovery plugins (Cursor, Claude Code, Continue, Cline, Windsurf, VS Code)
+- `cli/` — Click CLI
+- `vscode-extension/` — VS Code extension v0.3.0 (TypeScript)
+
+**Coding conventions:**
+- Use type hints on all function signatures
+- Prefer dataclasses or Pydantic/SQLModel models for structured data
+- Use pathlib.Path instead of os.path for file operations
+- Follow PEP 8: snake_case for functions/variables, PascalCase for classes
+- Define request/response models with Pydantic BaseModel
+- Use async def for all route handlers
+- Group routes in APIRouter, register on the app in main.py
+- Build LLM chains using LCEL (pipe operator |)
+- Load prompts from .md template files, not inline strings
+- Use LiteLLM gateway for all LLM calls (not provider SDKs directly)
+- Fernet encryption for any stored API keys
+
+**Key entry points:**
+- `backend/api/main.py` — FastAPI app startup
+- `backend/mcp/server.py` — MCP server (Claude Code, Cursor, Windsurf)
+- `cli/main.py` — CLI entry point
+- `vscode-extension/src/extension.ts` — VS Code extension entry point
+
+**Start backend:** `.venv/bin/uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload`

@@ -1,0 +1,94 @@
+# ── Secrets / environment ─────────────────────
+.env
+.env.local
+.env.*.local
+
+# Encryption keys — never commit these
+*.key
+secret.key
+
+# API credential files
+*.pem
+*.p12
+*.pfx
+credentials.json
+service_account.json
+
+# ── Virtual environments ──────────────────────
+.venv
+venv/
+env/
+.venv*/
+
+# ── Python build artifacts ────────────────────
+dist/
+build/
+*.egg-info/
+*.egg
+*.whl
+*.tar.gz
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# ── Type checking / linting ───────────────────
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.cache/
+.coverage
+htmlcov/
+
+# ── SQLite databases (runtime data, not source) ──
+*.db
+*.sqlite
+*.sqlite3
+
+# ── ProjectMind local data (machine-specific) ─
+.projectmind/
+.brain/
+
+# ── Claude Code internal directory (machine-specific, not for public) ──
+.claude/
+
+# ── VS Code extension build output ───────────
+vscode-extension/out/
+vscode-extension/node_modules/
+vscode-extension/*.vsix
+
+# ── Frontend ──────────────────────────────────
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+
+# ── macOS ─────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# ── Internal tooling files (not for public repos) ─────────────────────────
+CLAUDE.md
+
+# ── Node.js general ───────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Docker ────────────────────────────────────
+.docker/
+
+# ── Legacy (old llm_reviewer module) ─────────
+vectorstore
+llm_reviewer/__pycache__
+llm_reviewer/streamlit/__pycache__
+streamlit/__pycache__
+llm_reviewer/response/*.md
+llm_reviewer/response/*.json
+llm_reviewer/docs/*
+!llm_reviewer/docs/standard_documentation.pdf

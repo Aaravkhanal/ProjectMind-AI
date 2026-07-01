@@ -1,0 +1,118 @@
+name: 'ProjectMind Health Gate'
+description: >
+  Analyze code health with ProjectMind and block PRs that drop below
+  configurable score thresholds. Posts a formatted comment to the PR.
+
+author: 'Aarav Khanal'
+
+branding:
+  icon: 'shield'
+  color: 'green'
+
+inputs:
+  github_token:
+    description: 'GitHub token for posting PR comments'
+    required: true
+
+  project_path:
+    description: 'Path to the project root (relative to workspace)'
+    required: false
+    default: '.'
+
+  overall_min:
+    description: 'Minimum overall health score (0–10)'
+    required: false
+    default: '6.0'
+
+  security_min:
+    description: 'Minimum security score — recommended ≥ 7.0'
+    required: false
+    default: '7.0'
+
+  architecture_min:
+    description: 'Minimum architecture score'
+    required: false
+    default: '5.0'
+
+  maintainability_min:
+    description: 'Minimum maintainability score'
+    required: false
+    default: '5.0'
+
+  post_comment:
+    description: 'Whether to post a summary comment to the PR'
+    required: false
+    default: 'true'
+
+  python_version:
+    description: 'Python version to use'
+    required: false
+    default: '3.11'
+
+outputs:
+  passed:
+    description: 'Whether the gate passed ("true" | "false")'
+    value: ${{ steps.gate.outputs.passed }}
+  overall_score:
+    description: 'Overall health score'
+    value: ${{ steps.gate.outputs.overall_score }}
+  security_score:
+    description: 'Security score'
+    value: ${{ steps.gate.outputs.security_score }}
+
+runs:
+  using: 'composite'
+  steps:
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python_version }}
+
+    - name: Install ProjectMind
+      shell: bash
+      run: |
+        pip install --quiet \
+          "fastapi>=0.115" \
+          "sqlalchemy>=2.0" \
+          "langchain>=0.3" \
+          "langchain-core>=0.3" \
+          "langchain-openai>=0.2" \
+          "pydantic>=2.0" \
+          "python-dotenv"
+        pip install --quiet -e "${{ github.action_path }}/../../.." || true
+
+    - name: Run analysis
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        python -m cli.main analyze "${{ inputs.project_path }}" \
+          --no-cache 2>&1 || echo "Analysis complete"
+
+    - name: Run health gate
+      id: gate
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        PM_OVERALL_MIN: ${{ inputs.overall_min }}
+        PM_SECURITY_MIN: ${{ inputs.security_min }}
+        PM_ARCH_MIN: ${{ inputs.architecture_min }}
+        PM_MAINT_MIN: ${{ inputs.maintainability_min }}
+      run: |
+        python -m backend.ci.gate \
+          --path "${{ inputs.project_path }}" \
+          --overall-min "${{ inputs.overall_min }}" \
+          --security-min "${{ inputs.security_min }}" \
+          --arch-min "${{ inputs.architecture_min }}" \
+          ${{ inputs.post_comment == 'true' && '--post-comment' || '' }} \
+          --github-token "${{ inputs.github_token }}" \
+          --owner "${{ github.repository_owner }}" \
+          --repo "${{ github.event.repository.name }}" \
+          --pr-number "${{ github.event.pull_request.number }}"
+        EXIT=$?
+        HEALTH=$(cat "${{ inputs.project_path }}/.projectmind/health_score.json" 2>/dev/null || echo '{}')
+        echo "passed=$([ $EXIT -eq 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
+        echo "overall_score=$(echo $HEALTH | python3 -c 'import json,sys;d=json.load(sys.stdin);print(d.get("overall","?"))')" >> $GITHUB_OUTPUT
+        echo "security_score=$(echo $HEALTH | python3 -c 'import json,sys;d=json.load(sys.stdin);print(d.get("security","?"))')" >> $GITHUB_OUTPUT
+        exit $EXIT

@@ -1,0 +1,39 @@
+services:
+  frontend:
+    image: node:20-alpine
+    container_name: projectmind-frontend
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:8000
+    depends_on:
+      - api
+    networks:
+      - app-network
+
+  api:
+    build: .
+    container_name: projectmind-api
+    env_file:
+      - .env.local
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the user's projects directory so analysis can reach local repos.
+      # Override PROJECT_ROOT in .env.local to point at your repos folder.
+      - ${PROJECT_ROOT:-~}:/workspace:ro
+      - projectmind-data:/app/.projectmind
+    restart: unless-stopped
+    networks:
+      - app-network
+
+volumes:
+  projectmind-data:
+
+networks:
+  app-network:
+    driver: bridge
